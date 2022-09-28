@@ -5,22 +5,24 @@ const street = new Street()
 
 const keysPressed = {}
 
+streetPaths = 3
+
 const keyActions = {
     ArrowLeft() {
-        console.log('left');
+        // console.table(street.paths[0].points)
         street.decreaseVelocityX()
     },
     ArrowRight() {
         street.increaseVelocityX()
     },
     KeyA() {
-        console.table(street.points)
+        streetPaths = 3
     },
     KeyS(){
-        // lanes = 4
+        streetPaths = 4
     },
     KeyD() {
-        // lanes = 5
+        streetPaths = 5
     },
     KeyZ() {
         street.velocityZ += 0.1
@@ -50,25 +52,46 @@ function handleKeys() {
 }
 
 function handleStreet() {
+    street.setPaths(streetPaths)
     street.adjustVelocityX()
     street.updatePoints()
     drawStreet()
 }
 
 function drawStreet() {
-    // const { leftStart, leftEnd, rightStart, rightEnd, floorEnd, floorStart } = street.points
-    // context.fillStyle = "#ff0000";
-    // context.moveTo(leftStart, floorStart);
-    // context.lineTo(leftEnd, floorEnd);
-    // context.lineTo(rightEnd, floorEnd);
-    // context.lineTo(rightStart, floorStart);
-    // context.closePath();
-    // context.fill()
+    context.fillStyle = 'grey'
+    street.paths.forEach(path => {
+        const { startLeft, startRight, endLeft, endRight } = path.points
+        const { skyAdjust } = street
+        context.beginPath()
+        context.moveTo(startLeft, canvas.height)
+        context.lineTo(startRight, canvas.height)
+        context.lineTo(endRight, skyAdjust)
+        context.lineTo(endLeft, skyAdjust)
+        context.closePath()
+        context.fill()
+    })
 }
 
-
 function handleLand() {
-
+    const { startLeft, endLeft } = street.paths[0].points
+    const { startRight, endRight } = street.paths[street.paths.length-1].points
+    const { skyAdjust } = street
+    context.fillStyle = 'limegreen'
+    context.beginPath()
+    context.moveTo(startLeft, canvas.height)
+    context.lineTo(0, canvas.height)
+    context.lineTo(0, skyAdjust)
+    context.lineTo(endLeft, skyAdjust)
+    context.closePath()
+    context.fill()
+    context.beginPath()
+    context.moveTo(canvas.width, canvas.height)
+    context.lineTo(startRight, canvas.height)
+    context.lineTo(endRight, skyAdjust)
+    context.lineTo(canvas.width, skyAdjust)
+    context.closePath()
+    context.fill()
 }
 
 street.createLine()
@@ -86,7 +109,6 @@ function handleLines() {
     street.lines[0].adjustSizeByDistance()
     street.lines[0].updateEnd()
     street.lines[0].updateVelocity()
-    console.table(street.lines)
 }
 
 let colorAdjust = false
@@ -95,7 +117,7 @@ function checkAmountOfLines() {
     const lastLine = street.lines[street.lines.length - 1]
     const firstLine = street.lines[0]
     const passedScreen = firstLine.end >= canvas.height
-    const lastHasSize = lastLine.height > 1
+    const lastHasSize = lastLine.height > 0.1
     if (!!!lastHasSize) {
         street.lines.splice(street.lines.length, 1)
     }
@@ -105,20 +127,13 @@ function checkAmountOfLines() {
     if (passedScreen) {
         street.lines.splice(0, 1)
         street.lines[0].start = canvas.height + street.velocityZ
-        // street.createLine()
         colorAdjust = !colorAdjust
     }
 }
 
 function drawLines() {
     for (let i = 0; i < street.lines.length-1; i++) {
-        let color
-        if (i % 2 == Number(colorAdjust)) {
-            color = 'white'
-        }
-        else {
-            color = 'black'
-        }
+        const color = i % 2 == Number(colorAdjust) ? 'white' : 'grey'
         const line = street.lines[i];
         const { start, end } = line
         context.fillStyle = color
@@ -141,10 +156,9 @@ function handleTick(event) {
     if (!keysPressed['KeyZ'] && street.velocityZ > 0)
         street.velocityZ -= 0.3
     handleKeys()
-    // handleStreet()
     handleLines()
-    // handleLand()
-    
+    handleStreet()
+    handleLand()
     // console.log('a');
     // requestAnimationFrame(handleTick)
 }
